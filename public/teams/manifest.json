@@ -1,0 +1,53 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "5e83974c-3a0a-4b3f-976c-1be104d1aae6",
+  "packageName": "com.antigravity.customercentral",
+  "developer": {
+    "name": "Antigravity",
+    "websiteUrl": "https://www.example.com",
+    "privacyUrl": "https://www.example.com/privacy",
+    "termsOfUseUrl": "https://www.example.com/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "Customer Central",
+    "full": "Customer Central Dashboard"
+  },
+  "description": {
+    "short": "Project management and time tracking dashboard.",
+    "full": "A comprehensive dashboard for tracking project timelines, budgets, and time logs. Features include Gantt charts, weekly time entry, and role-based access control."
+  },
+  "accentColor": "#2563EB",
+  "staticTabs": [
+    {
+      "entityId": "dashboard",
+      "name": "Dashboard",
+      "contentUrl": "https://YOUR_PUBLIC_URL/timeline",
+      "websiteUrl": "https://YOUR_PUBLIC_URL/timeline",
+      "scopes": [
+        "personal"
+      ]
+    },
+    {
+      "entityId": "timelogs",
+      "name": "Time Logs",
+      "contentUrl": "https://YOUR_PUBLIC_URL/time-logs",
+      "websiteUrl": "https://YOUR_PUBLIC_URL/time-logs",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "YOUR_PUBLIC_URL"
+  ]
+}
