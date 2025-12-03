@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Customer, customerStorage } from "@/lib/customer-storage";
 import { Edit, Trash2, Plus } from "lucide-react";
 import { CustomerDialog } from "./customer-dialog";
+import { ExportButton } from "@/components/export-button";
+import { exportCustomers } from "@/lib/export-utils";
 
 interface CustomerListProps {
     refreshTrigger?: number;
@@ -54,7 +56,8 @@ export function CustomerList({ refreshTrigger = 0 }: CustomerListProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+                <ExportButton onExportExcel={() => exportCustomers(customers)} />
                 <Button onClick={() => setShowAddDialog(true)} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Customer

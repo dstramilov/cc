@@ -27,20 +27,25 @@ import { userStorage } from "@/lib/user-storage";
 
 export default function TimeLogsPage() {
     const [logs, setLogs] = useState<TimeLog[]>([]);
+    const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showUpload, setShowUpload] = useState(false);
     const { canUpload } = useUser();
-    const { selectedProjectIds } = useFilter();
+    const { selectedCustomerId, selectedProjectIds } = useFilter();
 
     useEffect(() => {
-        loadLogs();
+        loadData();
     }, []);
 
-    const loadLogs = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
-            const data = await timeLogStorage.getTimeLogs();
-            setLogs(data);
+            const [logsData, projectsData] = await Promise.all([
+                timeLogStorage.getTimeLogs(),
+                projectStorage.getProjects()
+            ]);
+            setLogs(logsData);
+            setProjects(projectsData);
         } catch (error) {
             console.error("Failed to load time logs:", error);
         } finally {
@@ -48,10 +53,17 @@ export default function TimeLogsPage() {
         }
     };
 
-    // Filter logs based on global project selection
+    // Filter logs based on customer first, then project selection
+    const customerProjects = selectedCustomerId
+        ? projects.filter(p => p.customerId === selectedCustomerId)
+        : [];
+
+    const customerProjectIds = customerProjects.map(p => p.id);
+    const logsForCustomer = logs.filter(log => customerProjectIds.includes(log.projectId));
+
     const filteredLogs = selectedProjectIds.length > 0
-        ? logs.filter(log => selectedProjectIds.includes(log.projectId))
-        : logs;
+        ? logsForCustomer.filter(log => selectedProjectIds.includes(log.projectId))
+        : logsForCustomer;
 
     const handleCSVImport = async (data: any[]) => {
         try {
@@ -79,7 +91,7 @@ export default function TimeLogsPage() {
                 }
             }
 
-            loadLogs(); // Reload to get full data with joins
+            loadData(); // Reload to get full data with joins
             setShowUpload(false);
         } catch (error) {
             console.error("Failed to import logs:", error);

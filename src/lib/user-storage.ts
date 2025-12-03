@@ -8,8 +8,21 @@ export interface User {
     customerId?: string;
     customer_id?: string; // DB column
     status: 'active' | 'inactive';
+    tenantId?: string;
+    tenant_id?: string;
     createdAt: string;
     created_at?: string; // DB column
+}
+
+interface UserDB {
+    id: string;
+    name: string;
+    email: string;
+    role: 'admin' | 'pm' | 'customer';
+    customer_id?: string;
+    tenant_id?: string;
+    status: 'active' | 'inactive';
+    created_at?: string;
 }
 
 class UserStorage {
@@ -21,7 +34,7 @@ class UserStorage {
             .select('*');
 
         if (error) throw error;
-        return (data || []).map(this.mapToFrontend);
+        return (data || []).map((u: UserDB) => this.mapToFrontend(u));
     }
 
     async saveUser(user: Partial<User>): Promise<User> {
@@ -31,6 +44,7 @@ class UserStorage {
             email: user.email,
             role: user.role,
             customer_id: user.customerId || user.customer_id,
+            tenant_id: user.tenantId || user.tenant_id,
             status: user.status,
         };
 
@@ -41,7 +55,7 @@ class UserStorage {
             .single();
 
         if (error) throw error;
-        return this.mapToFrontend(data);
+        return this.mapToFrontend(data as UserDB);
     }
 
     async deleteUser(id: string): Promise<void> {
@@ -71,11 +85,12 @@ class UserStorage {
         if (error) throw error;
     }
 
-    private mapToFrontend(data: any): User {
+    private mapToFrontend(data: UserDB): User {
         return {
             ...data,
             customerId: data.customer_id,
-            createdAt: data.created_at,
+            tenantId: data.tenant_id,
+            createdAt: data.created_at || new Date().toISOString(),
         };
     }
 }

@@ -1,7 +1,9 @@
 "use client"
 
+import React from "react"
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Helper to get week ending date (Friday) for a given week number
 const getWeekEndingDate = (weekNumber: number) => {
@@ -47,17 +49,31 @@ const data = [
     },
 ]
 
+interface TooltipProps {
+    active?: boolean;
+    payload?: Array<{
+        payload: {
+            week: string;
+            date: string;
+        };
+        color: string;
+        name: string;
+        value: number;
+    }>;
+    label?: string;
+}
+
 // Custom tooltip to show week and date
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
         const dataPoint = payload[0].payload;
         return (
-            <div className="bg-background border rounded-lg p-3 shadow-lg">
-                <p className="font-semibold text-sm">{dataPoint.week}</p>
-                <p className="text-xs text-muted-foreground mb-2">Week ending {dataPoint.date}</p>
-                {payload.map((entry: any, index: number) => (
-                    <p key={index} className="text-sm" style={{ color: entry.color }}>
-                        {entry.name}: {entry.value}%
+            <div className="bg-background border border-border p-2 rounded-lg shadow-lg">
+                <p className="font-medium">{dataPoint.week}</p>
+                <p className="text-xs text-muted-foreground mb-2">{dataPoint.date}</p>
+                {payload.map((entry, index) => (
+                    <p key={index} style={{ color: entry.color }} className="text-sm">
+                        {entry.name === 'ideal' ? 'Ideal Burn' : 'Actual Remaining'}: {entry.value}%
                     </p>
                 ))}
             </div>
@@ -66,35 +82,52 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export function BurnChart() {
+interface BurnChartProps {
+    loading?: boolean;
+}
+
+export const BurnChart = React.memo(function BurnChart({ loading }: BurnChartProps) {
     return (
         <Card className="col-span-2">
             <CardHeader>
                 <CardTitle>Burn Down Chart</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={data}>
-                        <XAxis
-                            dataKey="week"
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                        />
-                        <YAxis
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="ideal" stroke="#888888" strokeWidth={2} activeDot={{ r: 8 }} />
-                        <Line type="monotone" dataKey="actual" stroke="#adfa1d" strokeWidth={2} />
-                    </LineChart>
-                </ResponsiveContainer>
+                {loading ? (
+                    <div className="h-[350px] w-full p-4 space-y-4">
+                        <Skeleton className="h-[250px] w-full" />
+                        <div className="flex justify-between">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-4 w-12" />
+                        </div>
+                    </div>
+                ) : (
+                    <ResponsiveContainer width="100%" height={350}>
+                        <LineChart data={data}>
+                            <XAxis
+                                dataKey="week"
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <YAxis
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend />
+                            <Line type="monotone" dataKey="ideal" stroke="#888888" strokeWidth={2} activeDot={{ r: 8 }} />
+                            <Line type="monotone" dataKey="actual" stroke="#adfa1d" strokeWidth={2} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                )}
             </CardContent>
         </Card>
     )
-}
+});

@@ -1,0 +1,48 @@
+-- COMPREHENSIVE SCHEMA CHECK
+-- This script ensures ALL required columns exist for the application.
+
+-- 1. CUSTOMERS TABLE
+CREATE TABLE IF NOT EXISTS customers (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS external_id TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS domain TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- 2. USERS TABLE
+CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES customers(id);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- 3. PROJECTS TABLE
+CREATE TABLE IF NOT EXISTS projects (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES customers(id);
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_type TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS budget NUMERIC DEFAULT 0;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS hours_budget INTEGER DEFAULT 0;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS start_date DATE;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS end_date DATE;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- 4. TIME LOGS TABLE
+CREATE TABLE IF NOT EXISTS time_logs (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id);
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id);
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS task TEXT;
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS hours NUMERIC DEFAULT 0;
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE time_logs ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- 5. STORAGE BUCKETS (Optional, for future use)
+-- insert into storage.buckets (id, name) values ('documents', 'documents') on conflict do nothing;
+-- insert into storage.buckets (id, name) values ('avatars', 'avatars') on conflict do nothing;

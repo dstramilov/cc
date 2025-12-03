@@ -24,6 +24,20 @@ export interface Project {
     created_at?: string; // DB column
 }
 
+interface ProjectDB {
+    id: string;
+    name: string;
+    customer_id: string;
+    project_type: ProjectType;
+    status: ProjectStatus;
+    budget: number;
+    hours_budget?: number;
+    start_date: string;
+    end_date: string;
+    description?: string;
+    created_at?: string;
+}
+
 class ProjectStorage {
     async getProjects(): Promise<Project[]> {
         const { data, error } = await supabase
@@ -32,7 +46,7 @@ class ProjectStorage {
             .order('name');
 
         if (error) throw error;
-        return (data || []).map(this.mapToFrontend);
+        return (data || []).map((p: ProjectDB) => this.mapToFrontend(p));
     }
 
     async getProjectsByCustomer(customerId: string): Promise<Project[]> {
@@ -42,7 +56,7 @@ class ProjectStorage {
             .eq('customer_id', customerId);
 
         if (error) throw error;
-        return (data || []).map(this.mapToFrontend);
+        return (data || []).map((p: ProjectDB) => this.mapToFrontend(p));
     }
 
     async saveProject(project: Partial<Project>): Promise<Project> {
@@ -66,7 +80,30 @@ class ProjectStorage {
             .single();
 
         if (error) throw error;
-        return this.mapToFrontend(data);
+
+        // Log activity
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && dbProject.customer_id) {
+                const isNew = !project.id;
+                // Import dynamically to avoid circular dependency if any, though here it's fine
+                const { activityStorage } = await import('./activity-storage');
+
+                await activityStorage.createActivity({
+                    customer_id: dbProject.customer_id,
+                    user_id: user.id,
+                    activity_type: isNew ? 'project_created' : 'project_updated',
+                    entity_type: 'project',
+                    entity_id: data.id,
+                    description: isNew ? `Created project "${dbProject.name}"` : `Updated project "${dbProject.name}"`,
+                    metadata: { project_name: dbProject.name }
+                });
+            }
+        } catch (err) {
+            console.error('Failed to log activity:', err);
+        }
+
+        return this.mapToFrontend(data as ProjectDB);
     }
 
     async deleteProject(id: string): Promise<void> {
@@ -96,7 +133,7 @@ class ProjectStorage {
         if (error) throw error;
     }
 
-    private mapToFrontend(data: any): Project {
+    private mapToFrontend(data: ProjectDB): Project {
         return {
             ...data,
             customerId: data.customer_id,
@@ -104,7 +141,7 @@ class ProjectStorage {
             hoursBudget: data.hours_budget,
             startDate: data.start_date,
             endDate: data.end_date,
-            createdAt: data.created_at,
+            createdAt: data.created_at || new Date().toISOString(),
         };
     }
 }

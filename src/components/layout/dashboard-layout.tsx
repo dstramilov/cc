@@ -32,6 +32,7 @@ const sidebarLinks = [
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname();
     const { role, setRole, isProxied, exitProxy, user } = useUser();
+    const [isCollapsed, setIsCollapsed] = React.useState(true);
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -55,14 +56,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
             <div className={`flex flex-1 ${isProxied ? 'mt-[40px]' : ''}`}>
                 {/* Sidebar - Hidden on mobile, visible on desktop */}
-                <aside className={`hidden w-64 flex-col border-r md:flex fixed h-full z-10 glass ${isProxied ? 'top-[40px] h-[calc(100%-40px)]' : 'top-0'}`}>
-                    <div className="p-6">
-                        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            Customer Central
-                        </h1>
+                <aside
+                    className={cn(
+                        "hidden flex-col border-r border-white/20 dark:border-white/10 md:flex fixed h-full z-10 glass transition-all duration-300 ease-in-out",
+                        isProxied ? 'top-[40px] h-[calc(100%-40px)]' : 'top-0',
+                        isCollapsed ? "w-16" : "w-64"
+                    )}
+                >
+                    <div className={cn("flex items-center p-4", isCollapsed ? "justify-center" : "justify-between")}>
+                        {!isCollapsed && (
+                            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent truncate">
+                                Customer Central
+                            </h1>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            className="h-8 w-8"
+                        >
+                            <Menu className="h-4 w-4" />
+                        </Button>
                     </div>
                     <Separator />
-                    <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+                    <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
                         {sidebarLinks.map((link) => {
                             const Icon = link.icon;
                             const isActive = pathname === link.href;
@@ -71,14 +88,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     key={link.href}
                                     href={link.href}
                                     className={cn(
-                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all hover-lift",
                                         isActive
                                             ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50",
+                                        isCollapsed && "justify-center px-2"
                                     )}
+                                    title={isCollapsed ? link.label : undefined}
                                 >
-                                    <Icon className="h-5 w-5" />
-                                    {link.label}
+                                    <Icon className="h-5 w-5 shrink-0" />
+                                    {!isCollapsed && <span>{link.label}</span>}
                                 </Link>
                             );
                         })}
@@ -86,41 +105,61 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
                         {/* Role Switcher for Demo */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Simulate Role
-                            </label>
-                            <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
-                                <SelectTrigger className="w-full h-8 text-xs bg-white dark:bg-gray-900">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="admin">Admin (Full Access)</SelectItem>
-                                    <SelectItem value="pm">PM (Full Access)</SelectItem>
-                                    <SelectItem value="customer">Customer (Read Only)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {!isCollapsed && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Simulate Role
+                                </label>
+                                <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
+                                    <SelectTrigger className="w-full h-8 text-xs bg-white dark:bg-gray-900">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="admin">Admin (Full Access)</SelectItem>
+                                        <SelectItem value="pm">PM (Full Access)</SelectItem>
+                                        <SelectItem value="customer">Customer (Read Only)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <Link
                             href="/profile"
-                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                            className={cn(
+                                "flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors",
+                                isCollapsed && "justify-center px-2"
+                            )}
+                            title={isCollapsed ? "Profile" : undefined}
                         >
-                            <UserCircle className="h-5 w-5" />
-                            <div className="flex-1 min-w-0">
-                                <p className="truncate font-semibold">John Doe</p>
-                                <p className="truncate text-xs text-gray-500 capitalize">{role}</p>
-                            </div>
+                            <UserCircle className="h-5 w-5 shrink-0" />
+                            {!isCollapsed && (
+                                <div className="flex-1 min-w-0">
+                                    <p className="truncate font-semibold">John Doe</p>
+                                    <p className="truncate text-xs text-gray-500 capitalize">{role}</p>
+                                </div>
+                            )}
                         </Link>
-                        <Button variant="ghost" className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                            <LogOut className="h-4 w-4" />
-                            Logout
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20",
+                                isCollapsed ? "justify-center px-2" : "justify-start"
+                            )}
+                            title={isCollapsed ? "Logout" : undefined}
+                        >
+                            <LogOut className="h-4 w-4 shrink-0" />
+                            {!isCollapsed && "Logout"}
                         </Button>
                     </div>
                 </aside>
 
                 {/* Main Content Area */}
-                <main className="flex-1 flex flex-col md:ml-64">
+                <main
+                    className={cn(
+                        "flex-1 flex flex-col transition-all duration-300 ease-in-out",
+                        isCollapsed ? "md:ml-16" : "md:ml-64"
+                    )}
+                >
                     {/* Mobile Header */}
                     <header className="md:hidden flex items-center justify-between p-4 border-b">
                         <h1 className="text-xl font-bold">Customer Central</h1>

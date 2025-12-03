@@ -71,10 +71,10 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             await customerStorage.saveCustomer(newCustomer);
 
             // Simulate email notification
-            console.log(`[EMAIL SENT] To: ${formData.primaryUserEmail}`);
-            console.log(`Subject: Welcome to Customer Central`);
-            console.log(`Temporary Password: ${tempPassword}`);
-            console.log(`You will be required to change this password on first login.`);
+            // console.log(`[EMAIL SENT] To: ${formData.primaryUserEmail}`);
+            // console.log(`Subject: Welcome to Customer Central`);
+            // console.log(`Temporary Password: ${tempPassword}`);
+            // console.log(`You will be required to change this password on first login.`);
 
             alert(`Customer and Primary User created!\n\nTemporary password for ${formData.primaryUserEmail}: ${tempPassword}\n\n(In production, this would be sent via email)`);
 

@@ -9,6 +9,7 @@ export interface User {
     name: string;
     email: string;
     role: UserRole;
+    customerId?: string;
 }
 
 interface UserContextType {
@@ -45,12 +46,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Load proxy state from localStorage on mount
     useEffect(() => {
         const stored = localStorage.getItem('proxyState');
-        console.log("UserProvider mounted, checking storage:", stored);
+
         if (stored) {
             try {
                 const { isProxied: storedIsProxied, originalRole: storedOriginalRole, originalUser: storedOriginalUser, targetUser } = JSON.parse(stored);
                 if (storedIsProxied) {
-                    console.log("Restoring proxy state for:", targetUser.name);
+
                     setIsProxied(true);
                     setOriginalRole(storedOriginalRole);
                     setOriginalUser(storedOriginalUser);
@@ -65,7 +66,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const proxyAs = (targetUser: User) => {
-        console.log("proxyAs called for:", targetUser.name);
+
         const newOriginalRole = isProxied ? originalRole : role;
         const newOriginalUser = isProxied ? originalUser : user;
 
@@ -84,7 +85,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             originalUser: newOriginalUser,
             targetUser: targetUser
         };
-        console.log("Saving proxy state:", stateToSave);
+
         localStorage.setItem('proxyState', JSON.stringify(stateToSave));
     };
 

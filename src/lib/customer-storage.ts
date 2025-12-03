@@ -10,6 +10,8 @@ export interface Customer {
     status: 'active' | 'inactive';
     primary_user_id?: string;
     primaryUserId?: string;
+    tenantId?: string;
+    tenant_id?: string;
     created_at?: string;
     createdAt?: string;
 }
@@ -36,6 +38,7 @@ class CustomerStorage {
             email: customer.email,
             domain: customer.domain,
             status: customer.status,
+            tenant_id: customer.tenantId || customer.tenant_id,
             // primary_user_id: customer.primaryUserId || customer.primary_user_id, // Column missing in DB
         };
 
@@ -82,6 +85,7 @@ class CustomerStorage {
             ...data,
             externalId: data.external_id,
             primaryUserId: data.primary_user_id,
+            tenantId: data.tenant_id,
             createdAt: data.created_at,
         };
     }

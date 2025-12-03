@@ -12,46 +12,26 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Customer, customerStorage } from "@/lib/customer-storage";
+import { useTenant } from "@/hooks/use-tenant";
 
-interface CustomerDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onCustomerSaved: () => void;
-    customerToEdit?: Customer | null;
-}
-
+// ... inside component
 export function CustomerDialog({
     open,
     onOpenChange,
     onCustomerSaved,
     customerToEdit,
 }: CustomerDialogProps) {
-    const [formData, setFormData] = useState<Partial<Customer>>({
-        name: "",
-        email: "",
-        status: "active",
-    });
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (customerToEdit) {
-            setFormData(customerToEdit);
-        } else {
-            setFormData({
-                name: "",
-                email: "",
-                status: "active",
-            });
-        }
-    }, [customerToEdit, open]);
-
+    const { tenantId } = useTenant();
+    // ...
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            await customerStorage.saveCustomer(formData);
+            await customerStorage.saveCustomer({
+                ...formData,
+                tenantId: tenantId || undefined
+            });
             onCustomerSaved();
             onOpenChange(false);
         } catch (error) {

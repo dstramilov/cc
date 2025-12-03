@@ -22,6 +22,9 @@ import { Search, MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react";
 import { Project, projectStorage } from "@/lib/project-storage";
 import { customerStorage } from "@/lib/customer-storage";
 import { ProjectDialog } from "./project-dialog";
+import { ExportButton } from "@/components/export-button";
+import { exportProjects } from "@/lib/export-utils";
+import { useFilter } from "@/context/filter-context";
 
 export function ProjectList() {
     const [projects, setProjects] = useState<any[]>([]);
@@ -29,6 +32,7 @@ export function ProjectList() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const { selectedCustomerId } = useFilter();
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -62,7 +66,12 @@ export function ProjectList() {
     if (loading) return <div>Loading projects...</div>;
     if (error) return <div className="text-red-500">{error}</div>;
 
-    const filteredProjects = projects.filter(p =>
+    // Filter by customer first, then by search query
+    const customerProjects = selectedCustomerId
+        ? projects.filter(p => p.customerId === selectedCustomerId)
+        : projects;
+
+    const filteredProjects = customerProjects.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.customerName.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -108,10 +117,13 @@ export function ProjectList() {
                         className="pl-8"
                     />
                 </div>
-                <Button onClick={handleAdd}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Project
-                </Button>
+                <div className="flex gap-2">
+                    <ExportButton onExportExcel={() => exportProjects(filteredProjects)} />
+                    <Button onClick={handleAdd}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Project
+                    </Button>
+                </div>
             </div>
 
             <div className="rounded-md border">

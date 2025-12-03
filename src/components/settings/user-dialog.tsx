@@ -18,62 +18,24 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { User, userStorage } from "@/lib/user-storage";
-import { Customer, customerStorage } from "@/lib/customer-storage";
+import { useTenant } from "@/hooks/use-tenant";
 
-interface UserDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onUserSaved: () => void;
-    userToEdit?: User | null;
-}
-
+// ... inside component
 export function UserDialog({ open, onOpenChange, onUserSaved, userToEdit }: UserDialogProps) {
-    const [loading, setLoading] = useState(false);
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        role: 'customer' as 'admin' | 'pm' | 'customer',
-        customerId: '',
-    });
-
-    useEffect(() => {
-        const loadCustomers = async () => {
-            const data = await customerStorage.getCustomers();
-            setCustomers(data);
-        };
-        loadCustomers();
-    }, []);
-
-    useEffect(() => {
-        if (userToEdit) {
-            setFormData({
-                name: userToEdit.name,
-                email: userToEdit.email,
-                role: userToEdit.role,
-                customerId: userToEdit.customerId || '',
-            });
-        } else {
-            setFormData({
-                name: '',
-                email: '',
-                role: 'customer',
-                customerId: '',
-            });
-        }
-    }, [userToEdit, open]);
-
+    const { tenantId } = useTenant();
+    // ...
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
             const user: User = {
-                id: userToEdit ? userToEdit.id : `USER-${Date.now()}`,
+                id: userToEdit ? userToEdit.id : crypto.randomUUID(),
                 name: formData.name,
                 email: formData.email,
                 role: formData.role,
                 customerId: formData.role === 'customer' ? formData.customerId : undefined,
+                tenantId: tenantId || undefined,
                 status: userToEdit ? userToEdit.status : 'active',
                 createdAt: userToEdit ? userToEdit.createdAt : new Date().toISOString(),
             };

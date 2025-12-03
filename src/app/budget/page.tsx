@@ -31,7 +31,7 @@ import { projectStorage, Project } from "@/lib/project-storage";
 import { timeLogStorage, TimeLog } from "@/lib/time-log-storage";
 
 export default function BudgetPage() {
-    const { selectedProjectIds } = useFilter();
+    const { selectedCustomerId, selectedProjectIds } = useFilter();
     const [projects, setProjects] = useState<Project[]>([]);
     const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
     const [loading, setLoading] = useState(true);
@@ -55,10 +55,15 @@ export default function BudgetPage() {
         loadData();
     }, []);
 
-    // Filter data
-    const filteredProjects = projects.filter(p =>
-        selectedProjectIds.length === 0 || selectedProjectIds.includes(p.id)
-    );
+    // Filter data: Customer first, then projects
+    const customerProjects = selectedCustomerId
+        ? projects.filter(p => p.customerId === selectedCustomerId)
+        : [];
+
+    const filteredProjects = selectedProjectIds.length > 0
+        ? customerProjects.filter(p => selectedProjectIds.includes(p.id))
+        : customerProjects;
+
     const filteredProjectIds = filteredProjects.map(p => p.id);
     const filteredLogs = timeLogs.filter(log =>
         filteredProjectIds.includes(log.projectId) && log.status === 'approved'

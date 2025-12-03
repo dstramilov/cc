@@ -30,17 +30,17 @@ export function UserList({ refreshTrigger }: UserListProps) {
     const router = useRouter();
 
     const handleProxy = (targetUser: User) => {
-        console.log("Proxy requested for:", targetUser.name);
+        // console.log("Proxy requested for:", targetUser.name);
         // if (confirm(`Are you sure you want to proxy as ${targetUser.name}? You will see the app as they see it.`)) {
         // Map storage user to context user (they are compatible)
-        console.log("Calling proxyAs...");
+        // console.log("Calling proxyAs...");
         proxyAs({
             id: targetUser.id,
             name: targetUser.name,
             email: targetUser.email,
             role: targetUser.role
         });
-        console.log("Redirecting to dashboard...");
+        // console.log("Redirecting to dashboard...");
         router.push('/'); // Redirect to dashboard
         // }
     };

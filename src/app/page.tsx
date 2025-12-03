@@ -7,41 +7,53 @@ import { KPICard } from "@/components/dashboard/kpi-card";
 import { HoursChart } from "@/components/dashboard/hours-chart";
 import { BurnChart } from "@/components/dashboard/burn-chart";
 import { ProjectTimeline } from "@/components/dashboard/project-timeline";
-import { DollarSign, Clock, Activity, AlertCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { TodoWidget } from "@/components/dashboard/todo-widget";
+import { DollarSign, Clock, Activity, AlertCircle, LayoutDashboard, PieChart, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, projectStorage } from "@/lib/project-storage";
-import { customerStorage } from "@/lib/customer-storage";
+import { customerStorage, Customer } from "@/lib/customer-storage";
 import { timeLogStorage } from "@/lib/time-log-storage";
 import { getOverallHealth } from "@/lib/project-health";
 import { FilterBar } from "@/components/filter-bar";
 import { useFilter } from "@/context/filter-context";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [totalHoursLogged, setTotalHoursLogged] = useState(0);
   const [timeLogsData, setTimeLogsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { selectedCustomerId, selectedProjectIds } = useFilter();
 
   useEffect(() => {
     const loadData = async () => {
-      const projectsData = await projectStorage.getProjects();
-      const customersData = await customerStorage.getCustomers();
-      const timeLogsData = await timeLogStorage.getTimeLogs();
+      try {
+        const projectsData = await projectStorage.getProjects();
+        const customersData = await customerStorage.getCustomers();
+        const timeLogsData = await timeLogStorage.getTimeLogs();
 
-      // Enrich projects with customer names
-      const enrichedProjects = projectsData.map(p => {
-        const customer = customersData.find(c => c.id === p.customerId);
-        return { ...p, customerName: customer?.name || 'Unknown' };
-      });
+        // Enrich projects with customer names
+        const enrichedProjects = projectsData.map(p => {
+          const customer = customersData.find(c => c.id === p.customerId);
+          return { ...p, customerName: customer?.name || 'Unknown' };
+        });
 
-      setProjects(enrichedProjects);
-      setTimeLogsData(timeLogsData);
+        setProjects(enrichedProjects);
+        setCustomers(customersData);
+        setTimeLogsData(timeLogsData);
 
-      // Calculate total hours from approved time logs
-      const approvedHours = timeLogsData
-        .filter(log => log.status === 'approved')
-        .reduce((sum, log) => sum + log.hours, 0);
-      setTotalHoursLogged(approvedHours);
+        // Calculate total hours from approved time logs
+        const approvedHours = timeLogsData
+          .filter(log => log.status === 'approved')
+          .reduce((sum, log) => sum + log.hours, 0);
+        setTotalHoursLogged(approvedHours);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -103,75 +115,82 @@ export default function DashboardPage() {
         {/* Unified Filter Bar */}
         <FilterBar />
 
-        {projectCount > 0 ? (
+        {loading || projectCount > 0 ? (
           <>
             {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <KPICard
-                title="Hours Budget"
+                title="Total Projects"
+                value={projects.length}
+                icon={LayoutDashboard}
+                description={`${projects.filter(p => p.status === 'active').length} active`}
+                loading={loading}
+              />
+              <KPICard
+                title="Total Budget (Hrs)"
                 value={totalHoursBudget.toLocaleString()}
-                icon={Clock}
-                description={`${projectCount} Project${projectCount !== 1 ? 's' : ''}`}
+                icon={PieChart}
+                description="Across all projects"
+                loading={loading}
               />
-              <KPICard
-                title="Hours Used"
-                value={totalHoursUsed.toLocaleString()}
-                icon={Clock}
-                description={`${percentHoursUsed}% of hours budget`}
-                trend={`${hoursRemaining.toLocaleString()} hours remaining`}
-                trendUp={hoursRemaining > 0}
-              />
-              <KPICard
-                title="$ Budget"
-                value={`$${totalBudget.toLocaleString()}`}
-                icon={DollarSign}
-                description={`${percentBudgetUsed}% spent`}
-              />
-              <KPICard
-                title="$ Spent"
-                value={`$${dollarSpent.toLocaleString()}`}
-                icon={Activity}
-                description={`$${dollarRemaining.toLocaleString()} remaining`}
-                trend={`At $${hourlyRate}/hour rate`}
-                trendUp={dollarRemaining > 0}
-              />
-              <Card className="overflow-hidden" style={{ borderColor: healthInfo.color }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="p-2 rounded-lg"
-                        style={{ backgroundColor: healthInfo.bgColor }}
-                      >
-                        <AlertCircle className="h-5 w-5" style={{ color: healthInfo.color }} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Project Health</p>
-                        <h3
-                          className="text-2xl font-bold mt-1"
-                          style={{ color: healthInfo.color }}
-                        >
-                          {healthInfo.label}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {activeCount}/{projectCount} Active
-                        </p>
-                      </div>
+              <Card className="glass-card border-0">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Hours Used</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-4 w-32" />
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">{totalHoursUsed.toLocaleString()}</div>
+                      <div className="h-2 w-full bg-secondary mt-2 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${percentHoursUsed > 100 ? 'bg-red-500' : 'bg-blue-500'}`}
+                          style={{ width: `${Math.min(percentHoursUsed, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {percentHoursUsed}% of budget
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
+              <KPICard
+                title="Active Customers"
+                value={activeCount}
+                icon={Users}
+                description={`${customers.length} total customers`}
+                loading={loading}
+              />
             </div>
 
-            {/* Charts */}
+
+
+            {/* Charts & Widgets */}
+            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <HoursChart loading={loading} />
+              </div>
+              <div className="lg:col-span-1 space-y-4">
+                <TodoWidget />
+                <RecentActivity />
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <HoursChart />
-              <BurnChart />
+              <div className="lg:col-span-4">
+                <BurnChart loading={loading} />
+              </div>
             </div>
 
             {/* Timeline */}
             <div className="grid gap-4 md:grid-cols-1">
-              <ProjectTimeline />
+              <ProjectTimeline loading={loading} />
             </div>
           </>
         ) : (
