@@ -150,7 +150,6 @@ export function FilterBar() {
                             role="combobox"
                             aria-expanded={openProject}
                             className="w-full justify-between"
-                            disabled={isCustomerRole}
                         >
                             <div className="flex gap-1 flex-wrap">
                                 {selectedProjectIds.length === 0 && "Select projects..."}
