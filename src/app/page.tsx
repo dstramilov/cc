@@ -18,6 +18,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { useFilter } from "@/context/filter-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { useUser } from "@/lib/user-context";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const [timeLogsData, setTimeLogsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedCustomerId, selectedProjectIds } = useFilter();
+  const { role } = useUser();
 
   useEffect(() => {
     const loadData = async () => {
@@ -160,13 +162,15 @@ export default function DashboardPage() {
                   )}
                 </CardContent>
               </Card>
-              <KPICard
-                title="Active Customers"
-                value={activeCount}
-                icon={Users}
-                description={`${customers.length} total customers`}
-                loading={loading}
-              />
+              {(role === 'admin' || role === 'pm') && (
+                <KPICard
+                  title="Active Customers"
+                  value={activeCount}
+                  icon={Users}
+                  description={`${customers.length} total customers`}
+                  loading={loading}
+                />
+              )}
             </div>
 
 
