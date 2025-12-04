@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,10 @@ import { CheckCircle, AlertCircle, Loader2, Building2 } from 'lucide-react';
 
 export default function RegisterPage() {
     const router = useRouter();
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
     const [formData, setFormData] = useState({
         companyName: '',
         subdomain: '',
@@ -32,16 +36,17 @@ export default function RegisterPage() {
 
         setCheckingSubdomain(true);
         try {
-            const { data, error } = await supabase
-                .from('tenants')
-                .select('id')
-                .eq('subdomain', subdomain)
-                .single();
+            // Use RPC to check availability securely
+            const { data, error } = await supabase.rpc('check_subdomain_availability', {
+                p_subdomain: subdomain
+            });
 
-            setSubdomainAvailable(!data);
+            if (error) throw error;
+            setSubdomainAvailable(data);
         } catch (error) {
-            // If no data found, subdomain is available
-            setSubdomainAvailable(true);
+            console.error('Error checking subdomain:', error);
+            // Fallback or assume unavailable on error to be safe
+            setSubdomainAvailable(false);
         } finally {
             setCheckingSubdomain(false);
         }
@@ -97,7 +102,7 @@ export default function RegisterPage() {
                 throw new Error(data.error || 'Registration failed');
             }
 
-            // Login the user to establish session on client
+            // Login the user to establish session on client (sets cookies)
             const { error: loginError } = await supabase.auth.signInWithPassword({
                 email: formData.email,
                 password: formData.password,

@@ -6,6 +6,7 @@ import { UserProvider } from "@/lib/user-context";
 import { SupabaseAuthProvider } from "@/lib/supabase-auth-provider";
 import { FilterProvider } from "@/context/filter-context";
 import { UIPreferencesProvider } from "@/context/ui-preferences-context";
+import { TenantProvider } from "@/hooks/use-tenant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,11 +42,13 @@ export default function RootLayout({
         >
           <SupabaseAuthProvider>
             <UserProvider>
-              <UIPreferencesProvider>
-                <FilterProvider>
-                  {children}
-                </FilterProvider>
-              </UIPreferencesProvider>
+              <TenantProvider>
+                <UIPreferencesProvider>
+                  <FilterProvider>
+                    {children}
+                  </FilterProvider>
+                </UIPreferencesProvider>
+              </TenantProvider>
             </UserProvider>
           </SupabaseAuthProvider>
         </ThemeProvider>

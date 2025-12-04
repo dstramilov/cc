@@ -74,10 +74,17 @@ export async function middleware(req: NextRequest) {
         const hostname = req.headers.get('host') || '';
         const parts = hostname.split('.');
 
-        // Check if we're on a subdomain (not localhost or main domain)
+        // Check if we're on a subdomain
         let subdomain = 'legacy'; // Default for development
 
-        if (parts.length > 2 && !hostname.includes('localhost')) {
+        if (hostname.includes('localhost')) {
+            // Handle localhost subdomains (e.g., tenant.localhost:3000)
+            const parts = hostname.split('.');
+            if (parts.length > 1 && parts[0] !== 'localhost') {
+                subdomain = parts[0];
+            }
+        } else if (parts.length > 2) {
+            // Handle production subdomains (e.g., tenant.domain.com)
             subdomain = parts[0];
         }
 
@@ -107,11 +114,15 @@ export async function middleware(req: NextRequest) {
             }
 
             // Store tenant ID in cookie for client-side access
+            // For localhost subdomains, set domain to .localhost to share across subdomains
+            const cookieDomain = hostname.includes('localhost') ? '.localhost' : undefined;
+
             res.cookies.set('tenant_id', tenant.id, {
                 path: '/',
                 httpOnly: false, // Allow client-side access
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
+                domain: cookieDomain,
             });
 
             // Store tenant subdomain
@@ -120,6 +131,7 @@ export async function middleware(req: NextRequest) {
                 httpOnly: false,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
+                domain: cookieDomain,
             });
         }
     }

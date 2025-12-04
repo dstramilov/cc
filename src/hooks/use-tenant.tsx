@@ -30,28 +30,51 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         try {
             setIsLoading(true);
 
-            // Get tenant from cookie (set by middleware)
-            const cookies = document.cookie.split(';');
-            const tenantCookie = cookies.find(c => c.trim().startsWith('tenant_id='));
-            const tid = tenantCookie?.split('=')[1];
+            // Extract subdomain from current URL
+            const hostname = window.location.hostname;
+            let subdomain = 'legacy'; // Default for development
 
-            if (tid) {
-                setTenantId(tid);
+            console.log('[TenantProvider] Hostname:', hostname);
 
-                // Load tenant details
-                const { data: tenant } = await supabase
-                    .from('tenants')
-                    .select('name, subdomain')
-                    .eq('id', tid)
-                    .single();
-
-                if (tenant) {
-                    setTenantName(tenant.name);
-                    setTenantSubdomain(tenant.subdomain);
+            if (hostname.includes('localhost')) {
+                // Handle localhost subdomains (e.g., tenant.localhost:3000)
+                const parts = hostname.split('.');
+                if (parts.length > 1 && parts[0] !== 'localhost') {
+                    subdomain = parts[0];
                 }
+            } else {
+                // Handle production subdomains (e.g., tenant.domain.com)
+                const parts = hostname.split('.');
+                if (parts.length > 2) {
+                    subdomain = parts[0];
+                }
+            }
+
+            console.log('[TenantProvider] Extracted subdomain:', subdomain);
+
+            // Load tenant by subdomain using RPC to bypass RLS
+            const { data, error } = await supabase.rpc('get_tenant_by_subdomain', {
+                p_subdomain: subdomain
+            });
+
+            // RPC returns an array, get the first result
+            const tenant = data && data.length > 0 ? data[0] : null;
+
+            console.log('[TenantProvider] Tenant query result:', { tenant, error });
+
+            if (tenant) {
+                setTenantId(tenant.id);
+                setTenantName(tenant.name);
+                setTenantSubdomain(tenant.subdomain);
 
                 // Set tenant context in database
-                await supabase.rpc('set_tenant_context', { p_tenant_id: tid });
+                try {
+                    await supabase.rpc('set_tenant_context', { p_tenant_id: tenant.id });
+                } catch (rpcError) {
+                    console.error('[TenantProvider] Failed to set tenant context:', rpcError);
+                }
+            } else {
+                console.log('[TenantProvider] No tenant found for subdomain:', subdomain);
             }
 
             // Check if user is super admin
