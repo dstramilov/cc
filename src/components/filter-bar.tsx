@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useFilter } from "@/context/filter-context";
 import { customerStorage, Customer } from "@/lib/customer-storage";
 import { projectStorage, Project } from "@/lib/project-storage";
+import { useUser } from "@/lib/user-context";
 
 export function FilterBar() {
     const {
@@ -31,10 +32,14 @@ export function FilterBar() {
         setSelectedProjectIds,
     } = useFilter();
 
+    const { role, user } = useUser();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [openCustomer, setOpenCustomer] = useState(false);
     const [openProject, setOpenProject] = useState(false);
+
+    // Check if user is a customer (filters should be disabled)
+    const isCustomerRole = role === 'customer';
 
     useEffect(() => {
         const loadData = async () => {
@@ -46,6 +51,13 @@ export function FilterBar() {
         };
         loadData();
     }, []);
+
+    // Auto-filter customer role users to their own customer
+    useEffect(() => {
+        if (isCustomerRole && user?.customerId && selectedCustomerId !== user.customerId) {
+            setSelectedCustomerId(user.customerId);
+        }
+    }, [isCustomerRole, user, selectedCustomerId, setSelectedCustomerId]);
 
     // Filter projects based on selected customer
     const availableProjects = selectedCustomerId
@@ -74,6 +86,7 @@ export function FilterBar() {
                             role="combobox"
                             aria-expanded={openCustomer}
                             className="w-full justify-between"
+                            disabled={isCustomerRole}
                         >
                             {selectedCustomerName || "Select customer..."}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -137,6 +150,7 @@ export function FilterBar() {
                             role="combobox"
                             aria-expanded={openProject}
                             className="w-full justify-between"
+                            disabled={isCustomerRole}
                         >
                             <div className="flex gap-1 flex-wrap">
                                 {selectedProjectIds.length === 0 && "Select projects..."}
